@@ -2,21 +2,34 @@ package main
 
 import (
 	"math"
-	"os"
-	"strconv"
 
+	"github.com/alecthomas/kong"
 	"github.com/deadsy/sdfx/render"
 	"github.com/deadsy/sdfx/sdf"
+	"github.com/ngynkvn/go-fractals/cmd/cli"
+	u "github.com/ngynkvn/go-fractals/src/util"
 )
 
-const INITIAL_SIZE float64 = 50
+var CLI = &cli.CLISierp
+
+func main() {
+	ctx := kong.Parse(CLI)
+	ctx.FatalIfErrorf(ctx.Error)
+
+	box, err := sierpenski_ex()
+	if err != nil {
+		panic(err)
+	}
+	render.RenderSTL(box, CLI.MeshCells, CLI.Output)
+
+}
 
 func triangle(length float64) (sdf.SDF2, error) {
 	halfL := length / 2
-	poly, err := sdf.Polygon2D(sdf.V2Set{
-		{0, math.Sqrt(length*length - (halfL)*(halfL))},
-		{halfL, 0},
-		{-halfL, 0},
+	poly, err := sdf.Polygon2D(u.V2Set{
+		u.XY(0, math.Sqrt(length*length-(halfL)*(halfL))),
+		u.XY(halfL, 0),
+		u.XY(-halfL, 0),
 	})
 	return poly, err
 }
@@ -35,9 +48,9 @@ func sierp(triangle sdf.SDF2, i int) sdf.SDF2 {
 		sdf.Transform2D(scaled,
 			sdf.Translate2d(triangle.BoundingBox().BottomLeft().Sub(scaled.BoundingBox().BottomLeft()))),
 		sdf.Transform2D(scaled,
-			sdf.Translate2d(triangle.BoundingBox().BottomLeft().Sub(scaled.BoundingBox().BottomLeft()).Add(sdf.V2{X: width / 2, Y: 0}))),
+			sdf.Translate2d(triangle.BoundingBox().BottomLeft().Sub(scaled.BoundingBox().BottomLeft()).Add(u.XY(width/2, 0)))),
 		sdf.Transform2D(scaled,
-			sdf.Translate2d(triangle.BoundingBox().BottomLeft().Sub(scaled.BoundingBox().BottomLeft()).Add(sdf.V2{X: width / 4, Y: height / 2}))),
+			sdf.Translate2d(triangle.BoundingBox().BottomLeft().Sub(scaled.BoundingBox().BottomLeft()).Add(u.XY(width/4, height/2)))),
 	}
 	for j := range copies {
 		inner := sierp(copies[j], i+1)
@@ -49,28 +62,13 @@ func sierp(triangle sdf.SDF2, i int) sdf.SDF2 {
 	return sip
 }
 
+// Extrudes the 2D shape out to a desired width.
 func sierpenski_ex() (sdf.SDF3, error) {
-	tri, err := triangle(INITIAL_SIZE)
+	tri, err := triangle(CLI.Size)
 	if err != nil {
 		return nil, err
 	}
 	// Scale width and height by 1/2
 	sip := sierp(tri, 0)
-	return sdf.Extrude3D(sip, 5), nil
-}
-
-var NUMCELLS = 0
-
-func main() {
-	numCells, err := strconv.Atoi(os.Args[1])
-	if err != nil {
-		panic(err)
-	}
-	NUMCELLS = numCells
-	box, err := sierpenski_ex()
-	if err != nil {
-		panic(err)
-	}
-	render.RenderSTL(box, NUMCELLS, "./sierp.stl")
-
+	return sdf.Extrude3D(sip, CLI.Extrusion), nil
 }
