@@ -10,12 +10,16 @@ import (
 	u "github.com/ngynkvn/go-fractals/src/util"
 )
 
-var CLI = &cli.CLISierp
+var CLI cli.CLISierp
 
 func main() {
-	ctx := kong.Parse(CLI)
+	ctx := kong.Parse(&cli.Sierp)
 	ctx.FatalIfErrorf(ctx.Error)
+	Run(cli.Sierp)
+}
 
+func Run(cli cli.CLISierp) {
+	CLI = cli
 	box, err := sierpenski_ex()
 	if err != nil {
 		panic(err)

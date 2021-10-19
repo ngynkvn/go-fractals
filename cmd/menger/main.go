@@ -9,12 +9,16 @@ import (
 	"github.com/deadsy/sdfx/sdf"
 )
 
-var CLI = &cli.CLIMenger
+var CLI cli.CLIMenger
 
 func main() {
-	ctx := kong.Parse(CLI)
+	ctx := kong.Parse(&cli.Menger)
 	ctx.FatalIfErrorf(ctx.Error)
+	Run(cli.Menger)
+}
 
+func Run(cli cli.CLIMenger) {
+	CLI = cli
 	box, err := cube(CLI.Size)
 	if err != nil {
 		panic(err)
