@@ -2,6 +2,8 @@
 
 Some renders I made based off fractal patterns.
 
+I found out that GitHub has a built in STL viewer!! **[Check them here!](renders/)**
+
 <image src="docs/fractals.png"/>
 
 ## Usage
